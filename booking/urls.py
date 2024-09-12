@@ -6,7 +6,9 @@ from .views import *
 # router = DefaultRouter()
 
 urlpatterns = [
-    # path('api/login/', LoginView.as_view(), name='login'),
-    # path('api/logout/', LogoutView.as_view(), name='logout'),
+    path('api/', ReadOnlyOrAuthenticatedView.as_view(), name='home'),
+    path('api/register/', RegisterView.as_view(), name='register'),
+    path('api/login/', LoginView.as_view(), name='login'),
+    path('api/logout/', LogoutView.as_view(), name='logout'),
     path('apartments/', ApartmentListCreateView.as_view()),
 ]
