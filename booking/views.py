@@ -8,6 +8,8 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly
 from .permissions import IsOwnerOrReadOnly
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 from booking.models import *
 from booking.serializers import *
 
@@ -15,19 +17,24 @@ from booking.serializers import *
 class ApartmentListCreateView(ListCreateAPIView):
     queryset = Apartment.objects.all()
     serializer_class = ApartmentCreateSerializer
+
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    # http://127.0.0.1:8000/tasks/?status=new&deadline=2026-01-01
+    filterset_fields = {
+        'price': ['gte', 'lte'],
+        'location': ['exact', 'icontains'],
+        'rooms_amount': ['gte', 'lte'],
+        'category': ['exact'],
+    }
+    # filterset_fields = ['title', 'description', 'location', 'price', 'category', 'rooms_amount']
+    search_fields = ['title', 'description']
+    ordering_fields = ['created_at', 'price']
     permission_classes = [IsOwnerOrReadOnly]
-    # filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    # # http://127.0.0.1:8000/tasks/?status=new&deadline=2026-01-01
-    #
-    # filterset_fields = ['status', 'deadline']
-    # search_fields = ['title', 'description']
-    # ordering_fields = ['created_at']
-    # permission_classes = [IsOwnerOrReadOnly]
-    #
-    # def get_serializer_class(self):
-    #     if self.request.method == 'POST':
-    #         return ApartmentCreateSerializer
-    #     return ApartmentListSerializer
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return ApartmentCreateSerializer
+        return ApartmentDetailSerializer
 
 
 class ApartmentsDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
@@ -39,16 +46,16 @@ class ApartmentsDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
 class ReservationListCreateView(generics.ListCreateAPIView):
     queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user, owner=self.request.user)
+
 
 class ReservationDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer
     permission_classes = [IsOwnerOrReadOnly]
-
 
 
 class ReadOnlyOrAuthenticatedView(APIView):
@@ -95,6 +102,8 @@ def set_jwt_cookies(response, user):
 
 
 class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
