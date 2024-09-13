@@ -11,4 +11,6 @@ urlpatterns = [
     path('api/login/', LoginView.as_view(), name='login'),
     path('api/logout/', LogoutView.as_view(), name='logout'),
     path('apartments/', ApartmentListCreateView.as_view()),
+    path('reservations/', ReservationListCreateView.as_view(), name='reservation-list-create'),
+    path('reservations/<int:pk>/', ReservationDetailUpdateDeleteView.as_view(), name='reservation-detail-update-delete'),
 ]

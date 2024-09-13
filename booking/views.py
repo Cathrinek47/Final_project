@@ -3,10 +3,11 @@ from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from datetime import datetime
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, generics
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly
+from .permissions import IsOwnerOrReadOnly
 from booking.models import *
 from booking.serializers import *
 
@@ -33,6 +34,22 @@ class ApartmentsDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     queryset = Apartment.objects.all()
     serializer_class = ApartmentDetailSerializer
     # permission_classes = [IsOwnerOrReadOnly]
+
+
+class ReservationListCreateView(generics.ListCreateAPIView):
+    queryset = Reservation.objects.all()
+    serializer_class = ReservationSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user, owner=self.request.user)
+
+class ReservationDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Reservation.objects.all()
+    serializer_class = ReservationSerializer
+    permission_classes = [IsOwnerOrReadOnly]
+
+
 
 class ReadOnlyOrAuthenticatedView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]

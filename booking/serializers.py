@@ -19,6 +19,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
+class ReservationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Reservation
+        fields = '__all__'
+
 
 class ApartmentCreateSerializer(serializers.ModelSerializer):
     class Meta:

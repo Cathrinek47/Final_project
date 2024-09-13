@@ -3,6 +3,8 @@ from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin, UserManager
 from django.utils.translation import gettext_lazy as _
 from django.db import models
+from rest_framework.exceptions import ValidationError
+
 from booking.managers import SoftDeleteManager
 
 
@@ -75,7 +77,45 @@ class Apartment(models.Model):
 
 
 class Reservation(models.Model):
-    pass
+    STATUS_CHOICES = [
+        ('confirmed', 'Confirmed'),
+        ('cancelled', 'Cancelled'),
+        ('free', 'Free'),
+        ('reserved', 'Reserved'),
+    ]
+
+    apartment = models.ForeignKey(Apartment, on_delete=models.CASCADE, related_name='reservations',
+                                  verbose_name='Apartment')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reservations', verbose_name='User')
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_reservations', verbose_name='Owner')
+    start_date = models.DateTimeField(verbose_name='Start Date')
+    end_date = models.DateTimeField(verbose_name='End Date')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='free', verbose_name='Status')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created At')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated At')
+
+    def __str__(self):
+        return f'Reservation for {self.apartment.title} by {self.user.username}'
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Reservation'
+        verbose_name_plural = 'Reservations'
+
+    def clean(self):
+        # Check for overlapping reservations
+        overlapping_reservations = Reservation.objects.filter(
+            apartment=self.apartment,
+            start_date__lt=self.end_date,
+            end_date__gt=self.start_date
+        ).exclude(id=self.id)
+
+        if overlapping_reservations.exists():
+            raise ValidationError(_('This apartment is already reserved for the selected dates.'))
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
 
 
