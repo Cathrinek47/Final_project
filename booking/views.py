@@ -15,7 +15,7 @@ from booking.serializers import *
 class ApartmentListCreateView(ListCreateAPIView):
     queryset = Apartment.objects.all()
     serializer_class = ApartmentCreateSerializer
-
+    permission_classes = [IsOwnerOrReadOnly]
     # filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     # # http://127.0.0.1:8000/tasks/?status=new&deadline=2026-01-01
     #

@@ -75,7 +75,6 @@ class Apartment(models.Model):
         self.save()
 
 
-
 class Reservation(models.Model):
     STATUS_CHOICES = [
         ('confirmed', 'Confirmed'),
@@ -84,7 +83,7 @@ class Reservation(models.Model):
         ('reserved', 'Reserved'),
     ]
 
-    apartment = models.ForeignKey(Apartment, on_delete=models.CASCADE, related_name='reservations',
+    apartment_reserv = models.ForeignKey(Apartment, on_delete=models.CASCADE, related_name='reservations',
                                   verbose_name='Apartment')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reservations', verbose_name='User')
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_reservations', verbose_name='Owner')
@@ -95,7 +94,7 @@ class Reservation(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated At')
 
     def __str__(self):
-        return f'Reservation for {self.apartment.title} by {self.user.username}'
+        return f'Reservation for {self.apartment_reserv.title} by {self.user.username}'
 
     class Meta:
         ordering = ['-created_at']
@@ -105,7 +104,7 @@ class Reservation(models.Model):
     def clean(self):
         # Check for overlapping reservations
         overlapping_reservations = Reservation.objects.filter(
-            apartment=self.apartment,
+            apartment_reserv=self.apartment_reserv,
             start_date__lt=self.end_date,
             end_date__gt=self.start_date
         ).exclude(id=self.id)
