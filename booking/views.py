@@ -36,11 +36,14 @@ class ApartmentListCreateView(ListCreateAPIView):
             return ApartmentCreateSerializer
         return ApartmentDetailSerializer
 
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
 
 class ApartmentsDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     queryset = Apartment.objects.all()
     serializer_class = ApartmentDetailSerializer
-    # permission_classes = [IsOwnerOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly]
 
 
 class ReservationListCreateView(generics.ListCreateAPIView):
@@ -80,8 +83,8 @@ def set_jwt_cookies(response, user):
     access_token = refresh_token.access_token
 
     # Устанавливает JWT токены в куки.
-    access_expiry = datetime.utcfromtimestamp(access_token['exp'])
-    refresh_expiry = datetime.utcfromtimestamp(refresh_token['exp'])
+    access_expiry = datetime.fromtimestamp(access_token['exp'])
+    refresh_expiry = datetime.fromtimestamp(refresh_token['exp'])
 
     response.set_cookie(
         key='access_token',
@@ -165,4 +168,30 @@ class LogoutView(APIView):
         response.delete_cookie('refresh_token')
         return response
 
+
+class CurrentUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            'username': user.username,
+            'email': user.email
+        })
+
+
+class UserOwnedApartmentsView(ListAPIView):
+    serializer_class = ApartmentDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Apartment.objects.filter(owner=self.request.user)
+
+
+class UserReservationView(ListAPIView):
+    serializer_class = ReservationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Reservation.objects.filter(user=self.request.user)
 
