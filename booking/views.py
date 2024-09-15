@@ -49,17 +49,22 @@ class ApartmentsDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
 class ReservationListCreateView(generics.ListCreateAPIView):
     queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer
-    permission_classes = [IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user, owner=self.request.user)
+        apartment = serializer.validated_data['apartment_reserv']
+        serializer.save(user=self.request.user, owner=apartment.owner)
 
 
 class ReservationDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Reservation.objects.all()
-    serializer_class = ReservationSerializer
+    serializer_class = ReservationDetailSerializer
     permission_classes = [IsOwnerOrReadOnly]
 
+    # def get_serializer_class(self):
+    #     if self.request.method == 'POST':
+    #         return ReservationSerializer
+    #     return ReservationDetailSerializer
 
 class ReadOnlyOrAuthenticatedView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
