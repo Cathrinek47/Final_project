@@ -22,13 +22,14 @@ class RegisterSerializer(serializers.ModelSerializer):
 class ReservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation
-        fields = ['apartment_reserv', 'start_date', 'end_date']
+        fields = ['id', 'apartment_reserv', 'start_date', 'end_date']
 
 
 class ReservationDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation
-        fields = ['__all__']
+        fields = ['id', 'apartment_reserv', 'start_date', 'end_date', 'status']
+
 
 
 class ApartmentCreateSerializer(serializers.ModelSerializer):

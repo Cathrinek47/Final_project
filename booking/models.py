@@ -79,18 +79,15 @@ class Reservation(models.Model):
     STATUS_CHOICES = [
         ('confirmed', 'Confirmed'),
         ('cancelled', 'Cancelled'),
-        ('free', 'Free'),
         ('reserved', 'Reserved'),
     ]
 
     apartment_reserv = models.ForeignKey(Apartment, on_delete=models.CASCADE, related_name='reservations',
                                   verbose_name='Apartment')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reservations', verbose_name='User')
-    owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name='owned_reservations',
-                                 verbose_name='Owner', editable=False)
     start_date = models.DateTimeField(verbose_name='Start Date')
     end_date = models.DateTimeField(verbose_name='End Date')
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='free', verbose_name='Status')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='reserved', verbose_name='Status')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created At')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated At')
 
