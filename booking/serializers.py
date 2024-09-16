@@ -45,6 +45,13 @@ class ApartmentDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Apartment
         fields = '__all__'
+
+
+class RatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rating
+        fields = ['id', 'apartment', 'rating', 'feedback']
+
 #
 # class UserListSerializer(serializers.ModelSerializer):
 #     class Meta:

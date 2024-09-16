@@ -13,10 +13,11 @@ urlpatterns = [
     path('api/logout/', LogoutView.as_view(), name='logout'),
     path('apartments/', ApartmentListCreateView.as_view()),
     path('apartments/<int:pk>/', ApartmentsDetailUpdateDeleteView.as_view()),
+    path('ratings/', CreateFeedbackView.as_view(), name='feedback-create'),
     path('reservations/', ReservationListCreateView.as_view(), name='reservation-list-create'),
     path('reservations/<int:pk>/', ReservationDetailUpdateDeleteView.as_view(), name='reservation-detail-list-create'),
     path('user/', CurrentUserView.as_view(), name='current-user'),
     path('user/apartments/', UserOwnedApartmentsView.as_view(), name='users-apartments'),
     path('user/reservations/', UserReservationView.as_view(), name='users-reservations'),
-    # path('user/owner_reservations', UserOwnerReservationView.as_view(), name='owners-reservations'),
+    path('user/owner_reservations', UserOwnerReservationView.as_view(), name='owners-reservations'),
 ]

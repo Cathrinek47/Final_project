@@ -4,7 +4,7 @@ from django.contrib.auth.models import PermissionsMixin, UserManager
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 from rest_framework.exceptions import ValidationError
-
+from django.db.models import Avg
 from booking.managers import SoftDeleteManager
 
 
@@ -60,8 +60,14 @@ class Apartment(models.Model):
     created_at = models.DateField(auto_now_add=True)
     is_deleted = models.BooleanField(default=False)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='apartments', verbose_name='Owner')
+    objects_rating = models.DecimalField(max_digits=3, decimal_places=1, default=0.0, blank=True, verbose_name='Rating')
 
     objects = SoftDeleteManager()
+
+    def update_avg_rating(self):
+        avg_rating = self.rating.aggregate(Avg('rating'))['rating__avg']
+        self.objects_rating = avg_rating if avg_rating else 0.0
+        self.save()
 
     def __str__(self):
         return f': {self.title}'
@@ -115,4 +121,19 @@ class Reservation(models.Model):
         super().save(*args, **kwargs)
 
 
+class Rating(models.Model):
+    RATING_CHOICES = [(i, i) for i in range(1, 11)]
 
+    apartment = models.ForeignKey(Apartment, on_delete=models.CASCADE, related_name='ratings', verbose_name='Apartment')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings', verbose_name='User')
+    rating = models.IntegerField(choices=RATING_CHOICES, verbose_name='Rating')
+    feedback = models.TextField(max_length=255, null=True, blank=True, verbose_name='Feedback')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created At')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated At')
+
+    def __str__(self):
+        return f'Rating {self.rating} for {self.apartment.title} by {self.user.username}'
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Rating'

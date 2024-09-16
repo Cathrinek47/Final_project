@@ -4,6 +4,7 @@ from booking.models import *
 
 admin.site.register(Apartment)
 admin.site.register(Reservation)
+admin.site.register(Rating)
 
 # @admin.register(Apartment)
 # class ApartmentAdmin(admin.ModelAdmin):
