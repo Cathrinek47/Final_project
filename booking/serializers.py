@@ -1,22 +1,9 @@
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
+from django.contrib.auth.password_validation import validate_password
 from .models import *
 from django.contrib.auth.models import User
-
-
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-
-    class Meta:
-        model = User
-        fields = ['username', 'password', 'email']
-
-    def create(self, validated_data):
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            password=validated_data['password'],
-            email=validated_data.get('email', '')
-        )
-        return user
+import re
 
 
 class ReservationSerializer(serializers.ModelSerializer):
@@ -29,6 +16,7 @@ class ReservationDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation
         fields = ['id', 'apartment_reserv', 'start_date', 'end_date', 'status']
+        read_only_fields = ['id', 'apartment_reserv', 'start_date', 'end_date']
 
 
 
@@ -52,27 +40,6 @@ class RatingSerializer(serializers.ModelSerializer):
         model = Rating
         fields = ['id', 'apartment', 'rating', 'feedback']
 
-#
-# class UserListSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = User
-#         fields = (
-#             'username',
-#             'email',
-#             'phone',
-#         )
-#
-#
-# class UserDetailSerializer(serializers.ModelSerializer):
-#     project = serializers.StringRelatedField()
-#     class Meta:
-#         model = User
-#         fields = (
-#             'username',
-#             'email',
-#             'phone',
-#         )
-
 
 class RegisterUserSerializer(serializers.ModelSerializer):
     re_password = serializers.CharField(
@@ -84,28 +51,27 @@ class RegisterUserSerializer(serializers.ModelSerializer):
         fields = (
             'username',
             'email',
-            'phone',
+            'password',
+            're_password'
         )
         extra_kwargs = {
-            'password': {'write_only': True}
+            'password': {'write_only': True},
+            're_password': {'write_only': True}
         }
 
     def validate(self, data):
         username = data.get('username')
-        first_name = data.get('first_name')
-        last_name = data.get('last_name')
 
         if not re.match('^[a-zA-Z0-9_]*$', username):
             raise serializers.ValidationError(
                 "The username must be alphanumeric characters or have only_symbol "
             )
-        if not re.match('^[a-zA-Z]*$', first_name):
+
+        email = data.get('email')
+
+        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
             raise serializers.ValidationError(
-                "The first name must contain only alphabet symbols "
-            )
-        if not re.match('^[a-zA-Z]*$', last_name):
-            raise serializers.ValidationError(
-                "The last name must contain only alphabet symbols"
+                "The email is not valid."
             )
 
         password = data.get("password")
@@ -128,4 +94,19 @@ class RegisterUserSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+
+class LoginUserSerializer(serializers.Serializer):
+    class Meta:
+        model = User
+        fields = ['email', 'password']
+        extra_kwargs = {
+            'email': {
+                'required': True,
+                'allow_blank': False
+            },
+            'password': {
+                'write_only': True,
+                'style': {'input_type': 'password'}
+            }
+        }
 

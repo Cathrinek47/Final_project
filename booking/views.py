@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView, GenericAPIView
 from datetime import datetime
 from rest_framework.response import Response
 from rest_framework import status, generics
@@ -182,11 +182,11 @@ def set_jwt_cookies(response, user):
     )
 
 
-class RegisterView(APIView):
+class RegisterView(GenericAPIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
+        serializer = RegisterUserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             response = Response({
@@ -201,13 +201,29 @@ class RegisterView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LoginView(APIView):
+class LoginView(GenericAPIView):
     permission_classes = [AllowAny]
+    serializer_class = LoginUserSerializer
 
     def post(self, request, *args, **kwargs):
-        username = request.data.get('username')
+        # serializer = self.get_serializer(data=request.data)
+        # serializer.is_valid(raise_exception=True)
+        # email = serializer.validated_data['email']
+        # password = serializer.validated_data['password']
+        # username = request.data.get('username')
+        email = request.data.get('email')
         password = request.data.get('password')
-        user = authenticate(request, username=username, password=password)
+
+        if not email or not password:
+            return Response({'error': 'Please provide both email and password'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = User.objects.get(email=email)
+            username = user.username
+        except User.DoesNotExist:
+            return Response({'error': 'User with this email does not exist'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = authenticate(request, username=user.username, password=password)
+
         if user:
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
@@ -220,7 +236,7 @@ class LoginView(APIView):
                 key='access_token',
                 value=str(access_token),
                 httponly=True,
-                secure=False, # Используйте True для HTTPS
+                secure=False, #  True для HTTPS
                 samesite='Lax',
                 expires=access_expiry
                 )

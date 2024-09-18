@@ -1,4 +1,5 @@
-from rest_framework.authtoken.admin import User
+# from rest_framework.authtoken.admin import User
+from django.contrib.auth.models import User
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin, UserManager
 from django.utils.translation import gettext_lazy as _
@@ -6,6 +7,7 @@ from django.db import models
 from rest_framework.exceptions import ValidationError
 from django.db.models import Avg
 from booking.managers import SoftDeleteManager
+
 
 
 # class User(AbstractBaseUser, PermissionsMixin):
