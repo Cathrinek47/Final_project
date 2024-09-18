@@ -25,6 +25,10 @@ class ReservationSerializer(serializers.ModelSerializer):
         if end_date <= start_date:
             raise serializers.ValidationError('End date must be after the start date.')
 
+        user = data.get('user')
+        if user == data.get('apartment_reserv').owner:
+            raise serializers.ValidationError('You cannot reserve your own apartment.')
+
         overlapping_reservations = Reservation.objects.filter(
             apartment_reserv=apartment_reserv
         ).filter(
@@ -49,16 +53,16 @@ class ReservationUserDetailSerializer(serializers.ModelSerializer):
 class ReservationOwnerDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation
-        fields = ['id', 'apartment_reserv', 'start_date', 'end_date', 'status', 'user_username', 'apartment_reserv__owner__username']
-        read_only_fields = ['id', 'apartment_reserv', 'start_date', 'end_date', 'user_username', 'apartment_reserv__owner__username']
+        fields = ['id', 'apartment_reserv', 'start_date', 'end_date', 'status', 'user']
+        read_only_fields = ['id', 'apartment_reserv', 'start_date', 'end_date', 'user']
 
 
 
 class ApartmentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Apartment
-        fields = ['title', 'description', 'category', 'location', 'price', 'rooms_amount']
-
+        fields = ['title', 'description', 'category', 'location', 'price', 'rooms_amount', 'objects_rating']
+        read_only_fields = ['objects_rating', 'user', 'status', 'created_at', 'updated_at']
 
 
 class ApartmentDetailSerializer(serializers.ModelSerializer):
@@ -67,7 +71,7 @@ class ApartmentDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Apartment
         fields = '__all__'
-        read_only_fields = ['user', 'status', 'created_at', 'updated_at']
+        read_only_fields = ['objects_rating', 'user', 'status', 'created_at', 'updated_at']
 
 
 class RatingSerializer(serializers.ModelSerializer):

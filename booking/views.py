@@ -306,6 +306,13 @@ class CreateFeedbackView(generics.CreateAPIView):
     serializer_class = RatingSerializer
     permission_classes = [IsAuthenticated]
 
+
+    class Meta:
+        model = Rating
+        fields = ['id', 'apartment', 'user', 'rating', 'feedback', 'updated_at']
+        read_only_fields = ['user', 'updated_at']
+        extra_kwargs = {'apartment': {'lookup_field': ['id', 'title']}}
+
     def perform_create(self, serializer):
         user = self.request.user
         reservation_id = self.request.data.get('reservation')

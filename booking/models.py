@@ -110,17 +110,6 @@ class Reservation(models.Model):
         verbose_name = 'Reservation'
         verbose_name_plural = 'Reservations'
 
-    def clean(self):
-        # Check for overlapping reservations
-        overlapping_reservations = Reservation.objects.filter(
-            apartment_reserv=self.apartment_reserv,
-            start_date__lt=self.end_date,
-            end_date__gt=self.start_date
-        ).exclude(id=self.id)
-
-        if overlapping_reservations.exists():
-            raise ValidationError(_('This apartment is already reserved for the selected dates.'))
-
     def delete(self, *args, **kwargs):
         self.is_deleted = True
         self.save()
@@ -140,6 +129,7 @@ class Rating(models.Model):
     feedback = models.TextField(max_length=255, null=True, blank=True, verbose_name='Feedback')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created At')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated At')
+    is_deleted = models.BooleanField(default=False, null=True, blank=True, verbose_name='Deleted')
 
     def __str__(self):
         return f'Rating {self.rating} for {self.apartment.title} by {self.user.username}'
