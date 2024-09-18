@@ -1,3 +1,5 @@
+from django.utils import timezone
+from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
@@ -11,12 +13,44 @@ class ReservationSerializer(serializers.ModelSerializer):
         model = Reservation
         fields = ['id', 'apartment_reserv', 'start_date', 'end_date']
 
+    def validate(self, data):
+        apartment_reserv = data.get('apartment_reserv')
+        if apartment_reserv.is_deleted:
+            raise serializers.ValidationError('The selected apartment has been deleted.')
 
-class ReservationDetailSerializer(serializers.ModelSerializer):
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+        if start_date < timezone.now():
+            raise serializers.ValidationError('Start date must be in the future.')
+        if end_date <= start_date:
+            raise serializers.ValidationError('End date must be after the start date.')
+
+        overlapping_reservations = Reservation.objects.filter(
+            apartment_reserv=apartment_reserv
+        ).filter(
+            Q(start_date__lt=end_date) &
+            Q(end_date__gt=start_date) &
+            Q(is_deleted=False) &
+            ~Q(status='cancelled')
+        )
+
+        if overlapping_reservations.exists():
+            raise serializers.ValidationError('This apartment is already reserved for the selected dates.')
+
+        return data
+
+class ReservationUserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation
-        fields = ['id', 'apartment_reserv', 'start_date', 'end_date', 'status']
-        read_only_fields = ['id', 'apartment_reserv', 'start_date', 'end_date']
+        fields = ['id', 'apartment_reserv', 'start_date', 'end_date', 'status', 'is_deleted']
+        read_only_fields = ['id', 'apartment_reserv', 'start_date', 'end_date', 'status']
+
+
+class ReservationOwnerDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Reservation
+        fields = ['id', 'apartment_reserv', 'start_date', 'end_date', 'status', 'user_username', 'apartment_reserv__owner__username']
+        read_only_fields = ['id', 'apartment_reserv', 'start_date', 'end_date', 'user_username', 'apartment_reserv__owner__username']
 
 
 
@@ -33,6 +67,7 @@ class ApartmentDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Apartment
         fields = '__all__'
+        read_only_fields = ['user', 'status', 'created_at', 'updated_at']
 
 
 class RatingSerializer(serializers.ModelSerializer):

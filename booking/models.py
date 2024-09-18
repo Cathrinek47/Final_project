@@ -98,6 +98,9 @@ class Reservation(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='reserved', verbose_name='Status')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created At')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated At')
+    is_deleted = models.BooleanField(default=False, null=True, blank=True, verbose_name='Deleted')
+
+    # objects = SoftDeleteManager()
 
     def __str__(self):
         return f'Reservation for {self.apartment_reserv.title} by {self.user.username}'
@@ -118,9 +121,14 @@ class Reservation(models.Model):
         if overlapping_reservations.exists():
             raise ValidationError(_('This apartment is already reserved for the selected dates.'))
 
+    def delete(self, *args, **kwargs):
+        self.is_deleted = True
+        self.save()
+
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
+
 
 
 class Rating(models.Model):

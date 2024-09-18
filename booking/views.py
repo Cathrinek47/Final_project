@@ -7,7 +7,7 @@ from rest_framework import status, generics
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly
-from .permissions import IsOwnerOrReadOnly
+from .permissions import IsOwnerOrReadOnly, IsOwnerOrUser
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from booking.models import *
@@ -17,6 +17,7 @@ from booking.serializers import *
 class ApartmentListCreateView(ListCreateAPIView):
     queryset = Apartment.objects.all()
     serializer_class = ApartmentCreateSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     # http://127.0.0.1:8000/tasks/?status=new&deadline=2026-01-01
@@ -46,7 +47,6 @@ class ApartmentsDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsOwnerOrReadOnly]
 
 
-
 class ApartmentDetailView(generics.RetrieveAPIView):
     queryset = Apartment.objects.all()
     serializer_class = ApartmentDetailSerializer
@@ -74,45 +74,56 @@ class ReservationListCreateView(generics.ListCreateAPIView):
 
 class ReservationDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     queryset = Reservation.objects.all()
-    serializer_class = ReservationDetailSerializer
+    serializer_class = ReservationUserDetailSerializer
     permission_classes = [IsAuthenticated]
 
-    def update(self, request, *args, **kwargs):
-
-        partial = kwargs.pop('partial', False)
+    def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-
-        new_start_date = request.data.get('start_date')
-        new_end_date = request.data.get('end_date')
-
         if request.user == instance.user:
-            if set(request.data.keys()) == {'start_date', 'end_date'}:
-                overlapping_reservations = Reservation.objects.filter(
-                    apartment_reserv=instance.apartment_reserv,
-                    start_date__lt=new_end_date,
-                    end_date__gt=new_start_date
-                ).exclude(id=instance.id)
-
-                if overlapping_reservations.exists():
-                    return Response({"detail": "These dates are already reserved by another user."},
-                                    status=status.HTTP_400_BAD_REQUEST)
-        # Change instance.status = 'reserved'
-                serializer.save(start_date=new_start_date, end_date=new_end_date)
-            else:
-                return Response({"detail": "You can only update the start_date and end_date fields."},
-                                status=status.HTTP_400_BAD_REQUEST)
+            instance.is_deleted = True
+            instance.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
         else:
-            return Response({"detail": "You do not have permission to update this reservation."},
+            return Response({"detail": "You do not have permission to delete this reservation."},
                             status=status.HTTP_403_FORBIDDEN)
 
-        return Response(serializer.data)
+
+    # def update(self, request, *args, **kwargs):
+    #
+    #     partial = kwargs.pop('partial', False)
+    #     instance = self.get_object()
+    #     serializer = self.get_serializer(instance, data=request.data, partial=partial)
+    #     serializer.is_valid(raise_exception=True)
+    #
+    #     new_start_date = request.data.get('start_date')
+    #     new_end_date = request.data.get('end_date')
+    #
+    #     if request.user == instance.user:
+    #         if set(request.data.keys()) == {'start_date', 'end_date'}:
+    #             overlapping_reservations = Reservation.objects.filter(
+    #                 apartment_reserv=instance.apartment_reserv,
+    #                 start_date__lt=new_end_date,
+    #                 end_date__gt=new_start_date
+    #             ).exclude(id=instance.id)
+    #
+    #             if overlapping_reservations.exists():
+    #                 return Response({"detail": "These dates are already reserved by another user."},
+    #                                 status=status.HTTP_400_BAD_REQUEST)
+    #     # Change instance.status = 'reserved'
+    #             serializer.save(start_date=new_start_date, end_date=new_end_date)
+    #         else:
+    #             return Response({"detail": "You can only update the start_date and end_date fields."},
+    #                             status=status.HTTP_400_BAD_REQUEST)
+    #     else:
+    #         return Response({"detail": "You do not have permission to update this reservation."},
+    #                         status=status.HTTP_403_FORBIDDEN)
+    #
+    #     return Response(serializer.data)
 
 
 class UserOwnerReservationView(RetrieveUpdateDestroyAPIView):
     queryset = Reservation.objects.all()
-    serializer_class = ReservationDetailSerializer
+    serializer_class = ReservationOwnerDetailSerializer
     permission_classes = [IsAuthenticated]
 
     def update(self, request, *args, **kwargs):
@@ -128,7 +139,7 @@ class UserOwnerReservationView(RetrieveUpdateDestroyAPIView):
         apartment_owner = instance.apartment_reserv.owner
 
         if request_user == apartment_owner:
-            if set(request.data.keys()) == {'apartment_reserv', 'start_date', 'end_date', 'status'}:
+            if set(request.data.keys()) == {'status'}:
                 serializer.save(status=new_status)
             else:
                 return Response({"detail": "You can only update the status field."}, status=status.HTTP_400_BAD_REQUEST)
