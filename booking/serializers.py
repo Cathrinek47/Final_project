@@ -11,9 +11,9 @@ import re
 class ApartmentDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Apartment
-        fields = ['id', 'title', 'description', 'owner', 'objects_rating']
+        fields = ['id', 'title', 'description', 'location', 'price', 'category', 'owner', 'objects_rating']
 
-        read_only_fields = ['id', 'description', 'owner', 'objects_rating']
+        read_only_fields = ['id',  'owner', 'objects_rating']
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -61,6 +61,15 @@ class ReservationSerializer(serializers.ModelSerializer):
 
         return data
 
+
+class ReservationDetailSerializer(serializers.ModelSerializer):
+    # apartment_reserv = ApartmentDetailSerializer(read_only=True)
+    class Meta:
+        model = Reservation
+        fields = ['id', 'apartment_reserv', 'start_date', 'end_date', 'status', 'is_deleted']
+        read_only_fields = ['id', 'start_date', 'end_date', 'status', 'is_deleted']
+
+
 class ReservationUserDetailSerializer(serializers.ModelSerializer):
     apartment_reserv = ApartmentDetailSerializer(read_only=True)
     class Meta:
@@ -83,9 +92,10 @@ class ApartmentCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ['objects_rating', 'user', 'status', 'created_at', 'updated_at']
 
 
-
 class RatingSerializer(serializers.ModelSerializer):
-
+    reservation = ReservationDetailSerializer(read_only=True)
+    # apartment_reserv = ApartmentDetailSerializer(read_only=True)
+    user = UserSerializer(read_only=True)
     class Meta:
         model = Rating
         fields = ['id', 'reservation', 'user', 'rating', 'feedback', 'updated_at']
@@ -93,12 +103,13 @@ class RatingSerializer(serializers.ModelSerializer):
 
 
 class RatingDetailSerializer(serializers.ModelSerializer):
-    reservation = ReservationUserDetailSerializer(read_only=True)
-    user = UserSerializer(read_only=True)
+    reservation = ReservationDetailSerializer()
+    # user = UserSerializer(read_only=True)
+
     class Meta:
         model = Rating
-        fields = ['id', 'reservation', 'user', 'rating', 'feedback', 'updated_at']
-        read_only_fields = ['user', 'updated_at']
+        fields = ['id', 'reservation', 'rating', 'feedback', 'updated_at']
+        read_only_fields = ['updated_at']
 
 
 class RegisterUserSerializer(serializers.ModelSerializer):

@@ -321,13 +321,29 @@ class CreateFeedbackView(generics.ListCreateAPIView):
         #     raise ValidationError("You can only rate after the end date of your reservation.")
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.useruser)
 
-class FeedbackView(generics.ListAPIView):
+        apartment = serializer.reservation.apartment_reserv
+        total_reviews = apartment.reservations.count()
+        new_avg_rating = (apartment.objects_rating * (total_reviews - 1) + serializer.validated_data.get(
+            'rating')) / total_reviews
+        apartment.objects_rating = new_avg_rating
+        apartment.save()
+
+
+class FeedbackDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     serializer_class = RatingSerializer
     permission_classes = [IsAuthenticated]
     queryset = Rating.objects.all()
 
+    def perfom_create(self, instance, validated_data):
+        apartment = instance.reservation.apartment_reserv
+        total_reviews = apartment.reservations.count()
+        new_avg_rating = (apartment.objects_rating * (total_reviews - 1) + validated_data.get('rating',
+                                                                                              instance.rating)) / total_reviews
+        apartment.objects_rating = new_avg_rating
+        apartment.save()
+
+        return instance
 
 class ApartmentRatingsView(generics.ListAPIView):
     serializer_class = RatingSerializer
