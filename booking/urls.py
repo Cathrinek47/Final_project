@@ -14,6 +14,7 @@ urlpatterns = [
     path('apartments/', ApartmentListCreateView.as_view()),
     path('apartments/<int:pk>/', ApartmentsDetailUpdateDeleteView.as_view()),
     path('ratings/', CreateFeedbackView.as_view(), name='feedback-create'),
+    path('ratings/<int:pk>/', ApartmentRatingsView.as_view(), name='Apartment-ratings'),
     path('reservations/', ReservationListCreateView.as_view(), name='reservation-list-create'),
     path('reservations/<int:pk>/', ReservationDetailUpdateDeleteView.as_view(), name='reservation-detail-list-create'),
     path('user/', CurrentUserView.as_view(), name='current-user'),

@@ -66,10 +66,10 @@ class Apartment(models.Model):
 
     objects = SoftDeleteManager()
 
-    def update_avg_rating(self):
-        avg_rating = self.rating.aggregate(Avg('rating'))['rating__avg']
-        self.objects_rating = avg_rating if avg_rating else 0.0
-        self.save()
+    # def update_avg_rating(self):
+    #     avg_rating = self.rating.aggregate(Avg('rating'))['rating__avg']
+    #     self.objects_rating = avg_rating if avg_rating else 0.0
+    #     self.save()
 
     def __str__(self):
         return f': {self.title}'
@@ -123,7 +123,8 @@ class Reservation(models.Model):
 class Rating(models.Model):
     RATING_CHOICES = [(i, i) for i in range(1, 11)]
 
-    apartment = models.ForeignKey(Apartment, on_delete=models.CASCADE, related_name='ratings', verbose_name='Apartment')
+    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE, related_name='ratings',
+                                    verbose_name='Reservation')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings', verbose_name='User')
     rating = models.IntegerField(choices=RATING_CHOICES, verbose_name='Rating')
     feedback = models.TextField(max_length=255, null=True, blank=True, verbose_name='Feedback')
@@ -135,5 +136,8 @@ class Rating(models.Model):
         return f'Rating {self.rating} for {self.apartment.title} by {self.user.username}'
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['-updated_at']
         verbose_name = 'Rating'
+        verbose_name_plural = 'Ratings'
+
+

@@ -8,10 +8,28 @@ from django.contrib.auth.models import User
 import re
 
 
+class ApartmentDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Apartment
+        fields = ['id', 'title', 'description', 'owner', 'objects_rating']
+
+        read_only_fields = ['id', 'description', 'owner', 'objects_rating']
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'email']
+        read_only_fields = ['username', 'email']
+
+
 class ReservationSerializer(serializers.ModelSerializer):
+    # apartment_reserv = ApartmentDetailSerializer()
+    user = UserSerializer(read_only=True)
     class Meta:
         model = Reservation
-        fields = ['id', 'apartment_reserv', 'start_date', 'end_date']
+        fields = ['id', 'apartment_reserv', 'start_date', 'end_date', 'user', 'is_deleted']
+        read_only_fields = ['is_deleted','user__username']
 
     def validate(self, data):
         apartment_reserv = data.get('apartment_reserv')
@@ -44,10 +62,11 @@ class ReservationSerializer(serializers.ModelSerializer):
         return data
 
 class ReservationUserDetailSerializer(serializers.ModelSerializer):
+    apartment_reserv = ApartmentDetailSerializer(read_only=True)
     class Meta:
         model = Reservation
         fields = ['id', 'apartment_reserv', 'start_date', 'end_date', 'status', 'is_deleted']
-        read_only_fields = ['id', 'apartment_reserv', 'start_date', 'end_date', 'status']
+        read_only_fields = ['id', 'start_date', 'end_date', 'status']
 
 
 class ReservationOwnerDetailSerializer(serializers.ModelSerializer):
@@ -57,7 +76,6 @@ class ReservationOwnerDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'apartment_reserv', 'start_date', 'end_date', 'user']
 
 
-
 class ApartmentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Apartment
@@ -65,26 +83,27 @@ class ApartmentCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ['objects_rating', 'user', 'status', 'created_at', 'updated_at']
 
 
-class ApartmentDetailSerializer(serializers.ModelSerializer):
-    # category = CategorySerializer()
-    # sub_tasks = SubTaskSerializer(many=True, read_only=True)
-    class Meta:
-        model = Apartment
-        fields = '__all__'
-        read_only_fields = ['objects_rating', 'user', 'status', 'created_at', 'updated_at']
-
 
 class RatingSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Rating
-        fields = ['id', 'apartment', 'rating', 'feedback']
+        fields = ['id', 'reservation', 'user', 'rating', 'feedback', 'updated_at']
+        read_only_fields = ['user', 'updated_at']
+
+
+class RatingDetailSerializer(serializers.ModelSerializer):
+    reservation = ReservationUserDetailSerializer(read_only=True)
+    user = UserSerializer(read_only=True)
+    class Meta:
+        model = Rating
+        fields = ['id', 'reservation', 'user', 'rating', 'feedback', 'updated_at']
+        read_only_fields = ['user', 'updated_at']
 
 
 class RegisterUserSerializer(serializers.ModelSerializer):
-    re_password = serializers.CharField(
-    max_length=128,
-    write_only=True,
-    )
+    password = serializers.CharField(max_length=128, write_only=True)
+    re_password = serializers.CharField(max_length=128, write_only=True)
     class Meta:
         model = User
         fields = (

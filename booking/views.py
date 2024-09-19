@@ -195,6 +195,7 @@ def set_jwt_cookies(response, user):
 
 class RegisterView(GenericAPIView):
     permission_classes = [AllowAny]
+    serializer_class = RegisterUserSerializer
 
     def post(self, request):
         serializer = RegisterUserSerializer(data=request.data)
@@ -294,45 +295,56 @@ class UserOwnedApartmentsView(ListAPIView):
 
 
 class UserReservationView(ListAPIView):
-    serializer_class = ReservationSerializer
+    serializer_class = ReservationUserDetailSerializer
+    # reservation = ReservationSerializer(read_only=True)
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return Reservation.objects.filter(user=self.request.user)
 
 
-class CreateFeedbackView(generics.CreateAPIView):
+class CreateFeedbackView(generics.ListCreateAPIView):
     queryset = Rating.objects.all()
-    serializer_class = RatingSerializer
+    serializer_class = RatingDetailSerializer
     permission_classes = [IsAuthenticated]
 
+    # def get_queryset(self):
+    #     if user == self.request.user:
+    #         return Rating.objects.filter(user=user)
+    #     reservation_id = self.request.data.get('reservation')
+    #     reservation = Reservation.objects.get(id=reservation_id)
+    #
+    #     if reservation.user != user:
+    #         raise ValidationError("You can only rate your own reservations.")
 
-    class Meta:
-        model = Rating
-        fields = ['id', 'apartment', 'user', 'rating', 'feedback', 'updated_at']
-        read_only_fields = ['user', 'updated_at']
-        extra_kwargs = {'apartment': {'lookup_field': ['id', 'title']}}
+        # if reservation.end_date >= datetime.now():
+        #     raise ValidationError("You can only rate after the end date of your reservation.")
 
     def perform_create(self, serializer):
-        user = self.request.user
-        reservation_id = self.request.data.get('reservation')
-        reservation = Reservation.objects.get(id=reservation_id)
+        serializer.save(user=self.request.useruser)
 
-        if reservation.user != user:
-            raise ValidationError("You can only rate your own reservations.")
-
-        if reservation.end_date > datetime.now():
-            raise ValidationError("You can only rate after the end date of your reservation.")
-
-        serializer.save(user=user)
+class FeedbackView(generics.ListAPIView):
+    serializer_class = RatingSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Rating.objects.all()
 
 
 class ApartmentRatingsView(generics.ListAPIView):
     serializer_class = RatingSerializer
-    permission_classes = [AllowAny]
+    reservation = ReservationSerializer(read_only=True)
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        apartment_id = self.kwargs['apartment_id']
-        return Rating.objects.filter(apartment__id=apartment_id)
+        return Reservation.objects.filter(apartment_reserv__id=self.kwargs['pk'])
+        # apartment_id = self.kwargs['apartment_id']
+        # return Rating.objects.filter(apartment__id=apartment_id)
 
+    def perform_create(self, serializer):
+        reservation = Reservation.objects.filter(user=self.request.user)
+        user = self.request.user
+
+        if reservation.end_date > datetime.now():
+            raise ValidationError("You can only rate after the end date of your reservation.")
+
+        return
 
