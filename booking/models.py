@@ -72,7 +72,7 @@ class Apartment(models.Model):
     #     self.save()
 
     def __str__(self):
-        return f': {self.title}'
+        return f'{self.title}'
 
     class Meta:
         ordering = ['-created_at']
@@ -103,7 +103,7 @@ class Reservation(models.Model):
     # objects = SoftDeleteManager()
 
     def __str__(self):
-        return f'Reservation for {self.apartment_reserv.title} by {self.user.username}'
+        return f'{self.apartment_reserv.title} from {self.start_date} to {self.end_date} by {self.user.username}'
 
     class Meta:
         ordering = ['-created_at']

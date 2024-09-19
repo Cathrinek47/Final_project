@@ -1,13 +1,14 @@
+from django.db.models import Sum
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView, GenericAPIView
 from datetime import datetime
 from rest_framework.response import Response
-from rest_framework import status, generics
+from rest_framework import status, generics, mixins
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly
-from .permissions import IsOwnerOrReadOnly, IsOwnerOrUser
+from .permissions import IsOwnerOrReadOnly, IsOwnerOrUser, IsUser, CheckReservation
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from booking.models import *
@@ -72,10 +73,16 @@ class ReservationListCreateView(generics.ListCreateAPIView):
         serializer.save(user=self.request.user)
 
 
-class ReservationDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
+class ReservationDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView, mixins.CreateModelMixin):
     queryset = Reservation.objects.all()
-    serializer_class = ReservationUserDetailSerializer
+    # serializer_class = ReservationUserDetailSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return RatingSerializer
+        else:
+            return ReservationUserDetailSerializer
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -87,14 +94,23 @@ class ReservationDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
             return Response({"detail": "You do not have permission to delete this reservation."},
                             status=status.HTTP_403_FORBIDDEN)
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
 
-    # def update(self, request, *args, **kwargs):
-    #
-    #     partial = kwargs.pop('partial', False)
-    #     instance = self.get_object()
-    #     serializer = self.get_serializer(instance, data=request.data, partial=partial)
-    #     serializer.is_valid(raise_exception=True)
-    #
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        reservation = serializer.save(user=self.request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+
     #     new_start_date = request.data.get('start_date')
     #     new_end_date = request.data.get('end_date')
     #
@@ -118,7 +134,7 @@ class ReservationDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     #         return Response({"detail": "You do not have permission to update this reservation."},
     #                         status=status.HTTP_403_FORBIDDEN)
     #
-    #     return Response(serializer.data)
+
 
 
 class UserOwnerReservationView(RetrieveUpdateDestroyAPIView):
@@ -304,9 +320,34 @@ class UserReservationView(ListAPIView):
 
 
 class CreateFeedbackView(generics.ListCreateAPIView):
-    queryset = Rating.objects.all()
+    # queryset = Rating.objects.all(user=request.user)
     serializer_class = RatingDetailSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsUser, CheckReservation]
+
+    def get_queryset(self):
+        return Rating.objects.filter(user=self.request.user)
+
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+        reservation_id = self.request.data.get('reservation')
+        apartment = Apartment.objects.get(reservations=reservation_id)
+
+        all_apartment_ratings = Rating.objects.filter(reservation__apartment_reserv=apartment).count() #Amount of rewiews
+        sum_ratings = Rating.objects.filter(reservation__apartment_reserv__id=apartment.id).aggregate(Sum('rating'))['rating__sum'] #Sum of all ratings
+        apartment.objects_rating = sum_ratings / all_apartment_ratings if all_apartment_ratings!= 0 else 0
+        apartment.save()
+
+    # def check_reservation(self, reservation_id):
+    #     reservation = Reservation.objects.get(id=reservation_id)
+    #     if reservation.end_date < datetime.now() and reservation.status == 'Confirmed' and reservation.is_deleted == False:
+    #         return True
+    #     else:
+    #         return False
+        # if reservation.end_date >= datetime.now():
+        #     raise ValidationError("You can only rate after the end date of your reservation.")
+
+
 
     # def get_queryset(self):
     #     if user == self.request.user:
@@ -320,14 +361,15 @@ class CreateFeedbackView(generics.ListCreateAPIView):
         # if reservation.end_date >= datetime.now():
         #     raise ValidationError("You can only rate after the end date of your reservation.")
 
-    def perform_create(self, serializer):
-
-        apartment = serializer.reservation.apartment_reserv
-        total_reviews = apartment.reservations.count()
-        new_avg_rating = (apartment.objects_rating * (total_reviews - 1) + serializer.validated_data.get(
-            'rating')) / total_reviews
-        apartment.objects_rating = new_avg_rating
-        apartment.save()
+    # def perform_create(self, serializer):
+    #
+    #     apartment = Rating.objects.get(self.reservation.apartment_reserv)
+    #     # total_reviews = Rating.objects.filter(apartment=self.reservation.apartment_reserv).count()
+    #     # total_reviews = Rating.objects.annotate(count=Count(self.reservation.apartment_reserv))
+    #     new_avg_rating = (apartment.objects_rating * (total_reviews - 1) + serializer.validated_data.get(
+    #         'rating')) / total_reviews
+    #     apartment.objects_rating = new_avg_rating
+    #     apartment.save()
 
 
 class FeedbackDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):

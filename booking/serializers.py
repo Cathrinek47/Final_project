@@ -93,13 +93,26 @@ class ApartmentCreateSerializer(serializers.ModelSerializer):
 
 
 class RatingSerializer(serializers.ModelSerializer):
-    reservation = ReservationDetailSerializer(read_only=True)
+    # reservation = ReservationDetailSerializer()
     # apartment_reserv = ApartmentDetailSerializer(read_only=True)
     user = UserSerializer(read_only=True)
     class Meta:
         model = Rating
         fields = ['id', 'reservation', 'user', 'rating', 'feedback', 'updated_at']
-        read_only_fields = ['user', 'updated_at']
+        read_only_fields = ['reservation', 'user', 'updated_at']
+    def validate(self, data):
+        request = self.context.get('request')
+        reservation = data.get('reservation')
+        user = request.user
+
+        if reservation.status == 'cancelled' and reservation.is_deleted == True:
+            raise serializers.ValidationError('The selected reservation has been cancelled or deleted.')
+
+        booking = Reservation.objects.filter(reservation=reservation, user=user, status='confirmed').exists()
+        if not booking:
+            raise serializers.ValidationError('You cannot rate this reservation.')
+
+        return data
 
 
 class RatingDetailSerializer(serializers.ModelSerializer):
@@ -111,6 +124,19 @@ class RatingDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'reservation', 'rating', 'feedback', 'updated_at']
         read_only_fields = ['updated_at']
 
+    # def validate(self, data):
+    #     request = self.context.get('request')
+    #     reservation = data.get('reservation')
+    #     user = request.user
+    #
+    #     if reservation.status == 'cancelled' and reservation.is_deleted == True:
+    #         raise serializers.ValidationError('The selected reservation has been cancelled or deleted.')
+    #
+    #     booking = Reservation.objects.filter(reservation=reservation, user=user, resrvation__status='confirmed').exists()
+    #     if not booking:
+    #         raise serializers.ValidationError('You cannot rate this reservation.')
+    #
+    #     return data
 
 class RegisterUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length=128, write_only=True)
