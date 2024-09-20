@@ -125,33 +125,6 @@ class ReservationDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView, mixins.Cre
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-
-    #     new_start_date = request.data.get('start_date')
-    #     new_end_date = request.data.get('end_date')
-    #
-    #     if request.user == instance.user:
-    #         if set(request.data.keys()) == {'start_date', 'end_date'}:
-    #             overlapping_reservations = Reservation.objects.filter(
-    #                 apartment_reserv=instance.apartment_reserv,
-    #                 start_date__lt=new_end_date,
-    #                 end_date__gt=new_start_date
-    #             ).exclude(id=instance.id)
-    #
-    #             if overlapping_reservations.exists():
-    #                 return Response({"detail": "These dates are already reserved by another user."},
-    #                                 status=status.HTTP_400_BAD_REQUEST)
-    #     # Change instance.status = 'reserved'
-    #             serializer.save(start_date=new_start_date, end_date=new_end_date)
-    #         else:
-    #             return Response({"detail": "You can only update the start_date and end_date fields."},
-    #                             status=status.HTTP_400_BAD_REQUEST)
-    #     else:
-    #         return Response({"detail": "You do not have permission to update this reservation."},
-    #                         status=status.HTTP_403_FORBIDDEN)
-    #
-
-
-
 class UserOwnerReservationView(RetrieveUpdateDestroyAPIView):
     queryset = Reservation.objects.all()
     serializer_class = ReservationOwnerDetailSerializer
@@ -352,39 +325,6 @@ class CreateFeedbackView(generics.ListCreateAPIView):
         sum_ratings = Rating.objects.filter(reservation__apartment_reserv__id=apartment.id).aggregate(Sum('rating'))['rating__sum'] #Sum of all ratings
         apartment.objects_rating = sum_ratings / all_apartment_ratings if all_apartment_ratings!= 0 else 0
         apartment.save()
-
-    # def check_reservation(self, reservation_id):
-    #     reservation = Reservation.objects.get(id=reservation_id)
-    #     if reservation.end_date < datetime.now() and reservation.status == 'Confirmed' and reservation.is_deleted == False:
-    #         return True
-    #     else:
-    #         return False
-        # if reservation.end_date >= datetime.now():
-        #     raise ValidationError("You can only rate after the end date of your reservation.")
-
-
-
-    # def get_queryset(self):
-    #     if user == self.request.user:
-    #         return Rating.objects.filter(user=user)
-    #     reservation_id = self.request.data.get('reservation')
-    #     reservation = Reservation.objects.get(id=reservation_id)
-    #
-    #     if reservation.user != user:
-    #         raise ValidationError("You can only rate your own reservations.")
-
-        # if reservation.end_date >= datetime.now():
-        #     raise ValidationError("You can only rate after the end date of your reservation.")
-
-    # def perform_create(self, serializer):
-    #
-    #     apartment = Rating.objects.get(self.reservation.apartment_reserv)
-    #     # total_reviews = Rating.objects.filter(apartment=self.reservation.apartment_reserv).count()
-    #     # total_reviews = Rating.objects.annotate(count=Count(self.reservation.apartment_reserv))
-    #     new_avg_rating = (apartment.objects_rating * (total_reviews - 1) + serializer.validated_data.get(
-    #         'rating')) / total_reviews
-    #     apartment.objects_rating = new_avg_rating
-    #     apartment.save()
 
 
 class FeedbackDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):

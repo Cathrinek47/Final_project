@@ -66,11 +66,6 @@ class Apartment(models.Model):
 
     objects = SoftDeleteManager()
 
-    # def update_avg_rating(self):
-    #     avg_rating = self.rating.aggregate(Avg('rating'))['rating__avg']
-    #     self.objects_rating = avg_rating if avg_rating else 0.0
-    #     self.save()
-
     def __str__(self):
         return f'{self.title}'
 
