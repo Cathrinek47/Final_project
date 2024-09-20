@@ -105,8 +105,23 @@ class ReservationDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView, mixins.Cre
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        reservation_id = request.parser_context['kwargs']['pk']
+            # get_object_or_404(Reservation, pk=self.kwargs['pk']))
+        reservation = Reservation.objects.get(id=reservation_id)
+        serializer.save(user=self.request.user, reservation=reservation)
 
-        reservation = serializer.save(user=self.request.user)
+
+        # reservation_id = self.request.data.get('reservation')
+        apartment = Apartment.objects.get(reservations=reservation_id)
+
+        all_apartment_ratings = Rating.objects.filter(
+            reservation__apartment_reserv=apartment).count()  # Amount of rewiews
+        sum_ratings = Rating.objects.filter(reservation__apartment_reserv__id=apartment.id).aggregate(Sum('rating'))[
+            'rating__sum']  # Sum of all ratings
+        apartment.objects_rating = sum_ratings / all_apartment_ratings if all_apartment_ratings != 0 else 0
+        apartment.save()
+
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -387,22 +402,15 @@ class FeedbackDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
 
         return instance
 
-class ApartmentRatingsView(generics.ListAPIView):
+class ApartmentRatingsView(ListAPIView):
     serializer_class = RatingSerializer
     reservation = ReservationSerializer(read_only=True)
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Reservation.objects.filter(apartment_reserv__id=self.kwargs['pk'])
+        return Rating.objects.filter(reservation__apartment_reserv__id=self.kwargs['pk'])
         # apartment_id = self.kwargs['apartment_id']
         # return Rating.objects.filter(apartment__id=apartment_id)
+# Reservation.objects.filter(apartment_reserv__id=self.kwargs['pk'])
 
-    def perform_create(self, serializer):
-        reservation = Reservation.objects.filter(user=self.request.user)
-        user = self.request.user
-
-        if reservation.end_date > datetime.now():
-            raise ValidationError("You can only rate after the end date of your reservation.")
-
-        return
 

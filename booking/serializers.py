@@ -1,6 +1,7 @@
 from django.utils import timezone
 from django.db.models import Q
 from rest_framework import serializers
+from rest_framework.generics import get_object_or_404
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
 from .models import *
@@ -19,8 +20,8 @@ class ApartmentDetailSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email']
-        read_only_fields = ['username', 'email']
+        fields = ['username']
+        read_only_fields = ['username']
 
 
 class ReservationSerializer(serializers.ModelSerializer):
@@ -100,19 +101,6 @@ class RatingSerializer(serializers.ModelSerializer):
         model = Rating
         fields = ['id', 'reservation', 'user', 'rating', 'feedback', 'updated_at']
         read_only_fields = ['reservation', 'user', 'updated_at']
-    def validate(self, data):
-        request = self.context.get('request')
-        reservation = data.get('reservation')
-        user = request.user
-
-        if reservation.status == 'cancelled' and reservation.is_deleted == True:
-            raise serializers.ValidationError('The selected reservation has been cancelled or deleted.')
-
-        booking = Reservation.objects.filter(reservation=reservation, user=user, status='confirmed').exists()
-        if not booking:
-            raise serializers.ValidationError('You cannot rate this reservation.')
-
-        return data
 
 
 class RatingDetailSerializer(serializers.ModelSerializer):
@@ -124,19 +112,6 @@ class RatingDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'reservation', 'rating', 'feedback', 'updated_at']
         read_only_fields = ['updated_at']
 
-    # def validate(self, data):
-    #     request = self.context.get('request')
-    #     reservation = data.get('reservation')
-    #     user = request.user
-    #
-    #     if reservation.status == 'cancelled' and reservation.is_deleted == True:
-    #         raise serializers.ValidationError('The selected reservation has been cancelled or deleted.')
-    #
-    #     booking = Reservation.objects.filter(reservation=reservation, user=user, resrvation__status='confirmed').exists()
-    #     if not booking:
-    #         raise serializers.ValidationError('You cannot rate this reservation.')
-    #
-    #     return data
 
 class RegisterUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length=128, write_only=True)

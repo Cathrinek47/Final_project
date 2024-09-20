@@ -41,9 +41,14 @@ class CheckReservation(BasePermission):
 
     def has_object_permission(self, request, view, obj):
 
-        reservation_id = self.request.data.get('reservation')
-        reservation = Reservation.objects.get(id=reservation_id)
-        if reservation.end_date < datetime.now() and reservation.status == 'Confirmed' and reservation.is_deleted == False:
+        reservation_id = request.data.get('reservation')
+        print(request)
+        # reservation = Reservation.objects.get(id=reservation_id)
+
+        if request.method != 'POST':
+                # and reservation.end_date < datetime.now() and reservation.status == 'Confirmed' and reservation.is_deleted == False):
             return True
+        # elif request.method != 'POST':
+        #     return True
         else:
             return False
