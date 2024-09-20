@@ -64,9 +64,12 @@ class ApartmentDetailView(generics.RetrieveAPIView):
 
 
 class ReservationListCreateView(generics.ListCreateAPIView):
-    queryset = Reservation.objects.all()
+    # queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Reservation.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
         apartment = serializer.validated_data['apartment_reserv']
@@ -296,15 +299,6 @@ class UserOwnedApartmentsView(ListAPIView):
 
     def get_queryset(self):
         return Apartment.objects.filter(owner=self.request.user)
-
-
-class UserReservationView(ListAPIView):
-    serializer_class = ReservationUserDetailSerializer
-    # reservation = ReservationSerializer(read_only=True)
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return Reservation.objects.filter(user=self.request.user)
 
 
 class CreateFeedbackView(generics.ListCreateAPIView):

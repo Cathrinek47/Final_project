@@ -20,6 +20,5 @@ urlpatterns = [
     path('reservations/<int:pk>/', ReservationDetailUpdateDeleteView.as_view(), name='reservation-detail-list-create'),
     path('user/', CurrentUserView.as_view(), name='current-user'),
     path('user/apartments/', UserOwnedApartmentsView.as_view(), name='users-apartments'),
-    path('user/reservations/', UserReservationView.as_view(), name='users-reservations'),
     path('user/owner_reservations/<int:pk>/', UserOwnerReservationView.as_view(), name='owners-reservations'),
 ]
