@@ -1,19 +1,19 @@
 Проект Booking
 
-    Возможности:
-    - Управление квартирами: создание, просмотр, обновление и удаление.
-    - Управление бронированиями: создание, просмотр, обновление и удаление.
-    - Управление пользователями: регистрация, аутентификация, просмотр профиля.
-    - Оценка бронирований: добавление отзывов и рейтингов.
+Features:
+- Apartment management: create, view, update, and delete.
+- Reservation management: create, view, update, and delete.
+- User management: register, authenticate, and view profile.
+- Reservation rating: add reviews and ratings.
 
-    Эндпоинты:
-    - /apartments/ [GET, POST]: Получение списка квартир, создание новой квартиры.
-    - /apartments/{id}/ [GET, PUT, DELETE]: Получение, обновление, удаление конкретной квартиры.
-    - /reservations/ [GET, POST]: Получение списка бронирований, создание нового бронирования.
-    - /reservations/{id}/ [GET, PUT, DELETE]: Получение, обновление, удаление конкретного бронирования, добавление отзыва по завершении бронирования.
-    - /apartments/{id}/ratings/ [GET]: Просмотр отзывов на апартаменты.
-    - /users/register/ [POST]: Регистрация нового пользователя.
-    - /users/login/ [POST]: Аутентификация пользователя.
-    - /users/profile/ [GET]: Получение профиля текущего пользователя.
-    - /ratings/ [GET, POST]: Получение списка отзывов, добавление нового отзыва.
-    - /ratings/{id}/ [GET, PUT, DELETE]: Получение, обновление, удаление конкретного отзыва.
+Endpoints:
+- /apartments/ [GET, POST]: Get a list of apartments, create a new apartment.
+- /apartments/{id}/ [GET, PUT, DELETE]: Get, update, and delete a specific apartment.
+- /reservations/ [GET, POST]: Get a list of reservations, create a new reservation.
+- /reservations/{id}/ [GET, PUT, DELETE]: Get, update, and delete a specific reservation, add a review upon completion of the reservation.
+- /apartments/{id}/ratings/ [GET]: View reviews for apartments.
+- /users/register/ [POST]: Register a new user.
+- /users/login/ [POST]: User authentication.
+- /users/profile/ [GET]: Get the current user's profile.
+- /ratings/ [GET, POST]: Get a list of reviews, add a new review.
+- /ratings/{id}/ [GET, PUT, DELETE]: Get, update, delete a specific review.
